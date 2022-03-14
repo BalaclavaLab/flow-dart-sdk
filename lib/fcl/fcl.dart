@@ -1,57 +1,59 @@
 import 'dart:convert';
-import 'dart:ffi';
+
 import 'package:convert/convert.dart';
-
 import 'package:fixnum/fixnum.dart';
-import 'package:flow_dart_sdk/fcl/encode.dart';
-
-import 'package:grpc/grpc.dart';
-import 'package:grpc/grpc_connection_interface.dart';
 import 'package:flow_dart_sdk/fcl/constants.dart';
-
-// Crypto
-import 'package:pointycastle/pointycastle.dart';
+import 'package:flow_dart_sdk/fcl/crypto.dart';
+import 'package:flow_dart_sdk/fcl/encode.dart';
 
 // Local utilities
 import 'package:flow_dart_sdk/fcl/format.dart';
 import 'package:flow_dart_sdk/fcl/types.dart';
 import 'package:flow_dart_sdk/src/cadenceUtils.dart';
-import 'package:flow_dart_sdk/fcl/crypto.dart';
 
 // Flow protobuf
 import 'package:flow_dart_sdk/src/generated/flow/access/access.pbgrpc.dart';
 import 'package:flow_dart_sdk/src/generated/flow/entities/transaction.pb.dart';
+import 'package:flow_dart_sdk/wallet/wallet_provider.dart';
+import 'package:flow_dart_sdk/wallet/wallet_utils.dart';
+import 'package:grpc/grpc.dart';
+import 'package:grpc/grpc_connection_interface.dart';
 import 'package:rlp/rlp.dart';
 
 class FlowClient {
-  String endPoint;
-  int port;
-  ClientChannelBase channel;
+  String _appTitle;
+  String _appUrl;
+  WalletProvider _walletProvider;
 
-  AccessAPIClient accessClient;
+  String _accessNode;
+  int _port;
+  ClientChannelBase _channel;
+
+  AccessAPIClient? accessClient;
 
   static const String MOBILE_EMULATOR_ENDPOINT = '10.0.2.2';
   static const int FLOW_EMULATOR_PORT = 3569;
 
-  FlowClient(this.endPoint, this.port) {
-    this
-      ..channel = ClientChannel(
-        this.endPoint,
-        port: this.port,
-        options:
-            const ChannelOptions(credentials: ChannelCredentials.insecure()),
-      );
+  FlowClient(this._accessNode, this._port, this._appTitle, this._appUrl, this._walletProvider)
+      : this._channel = ClientChannel(
+          _accessNode,
+          port: _port,
+          options: const ChannelOptions(credentials: ChannelCredentials.insecure()),
+        );
+
+  Future<void> authenticate() async {
+    await WalletUtils.performHttpRequest(_walletProvider.endpoint);
   }
 
   AccessAPIClient getAccessClient() {
     if (accessClient == null) {
-      this.accessClient = AccessAPIClient(this.channel,
-          options: CallOptions(timeout: Duration(seconds: 2)));
+      this.accessClient =
+          AccessAPIClient(this._channel, options: CallOptions(timeout: Duration(seconds: 2)));
     }
-    return this.accessClient;
+    return this.accessClient!;
   }
 
-  Future<AccountResponse> getAccount(String address, {Int64 height}) async {
+  Future<AccountResponse> getAccount(String address, {Int64? height}) async {
     /* TODO: Implement at later stage
     var blockHeight = height;
     if (height == null) {
@@ -64,8 +66,7 @@ class FlowClient {
       ..address = hex.decode(address);
 
      */
-    final request = GetAccountAtLatestBlockRequest()
-      ..address = hex.decode(address);
+    final request = GetAccountAtLatestBlockRequest()..address = hex.decode(address);
     return this.getAccessClient().getAccountAtLatestBlock(request);
   }
 
@@ -76,7 +77,7 @@ class FlowClient {
   }
 
   /// Gets block at specified [height] or latest available.
-  Future<BlockResponse> getBlock({Int64 height}) {
+  Future<BlockResponse> getBlock({Int64? height}) {
     final client = this.getAccessClient();
     if (height == null) {
       return client.getLatestBlock(GetLatestBlockRequest());
@@ -95,7 +96,7 @@ class FlowClient {
 
   /// Executes [code][ script at specified [height] or [blockId].
   Future<ExecuteScriptResponse> executeScript(String code,
-      {List<CadenceValue> arguments, Int64 height, List<int> blockId}) async {
+      {List<CadenceValue>? arguments, Int64? height, List<int>? blockId}) async {
     final client = this.getAccessClient();
 
     final args = prepareArguments(arguments);
@@ -111,10 +112,7 @@ class FlowClient {
     }
 
     // If height is not specified, we shall use current block height
-    var blockHeight = height;
-    if (height == null) {
-      blockHeight = await this.getBlockHeight();
-    }
+    var blockHeight = height ?? await this.getBlockHeight();
 
     final request = ExecuteScriptAtBlockHeightRequest()
       ..blockHeight = blockHeight
@@ -125,19 +123,25 @@ class FlowClient {
     return client.executeScriptAtBlockHeight(request);
   }
 
+  Future<void> sendTransaction2(String code) async {
+    final client = this.getAccessClient();
+
+    final t = Transaction();
+
+    final request = SendTransactionRequest(transaction: t);
+
+    client.sendTransaction(request);
+  }
+
   /// Submits transaction to network.
   Future<SendTransactionResponse> sendTransaction(String code,
-      {List<CadenceValue> arguments, Int64 gasLimit}) async {
+      {List<CadenceValue>? arguments, Int64? gasLimit}) async {
     final client = this.getAccessClient();
 
     // Convert arguments to required format
     final args = prepareArguments(arguments);
 
-    var fixedGasLimit = gasLimit;
-
-    if (fixedGasLimit == null) {
-      fixedGasLimit = Int64(100);
-    }
+    final fixedGasLimit = gasLimit ?? Int64(100);
 
     final latestBlock = await this.getBlock();
 
@@ -165,7 +169,7 @@ class FlowClient {
 
     transaction.arguments.insertAll(0, args);
     transaction.authorizers.insertAll(0, [payer]);
-    
+
     // Signing
     final payload = transactionPayload(transaction);
     final rlpPayload = Rlp.encode(payload);
@@ -173,7 +177,8 @@ class FlowClient {
 
     // Sign payload
     // Proposer
-    signPayload(transaction, rlpPayload, transaction.proposalKey.address, privateKey, keyId, payloadSignatures);
+    signPayload(transaction, rlpPayload, transaction.proposalKey.address, privateKey, keyId,
+        payloadSignatures);
     // Payer
     signPayload(transaction, rlpPayload, payer, privateKey, keyId, payloadSignatures);
 
@@ -200,7 +205,7 @@ class FlowClient {
 
   /// Gets events of [eventName] type emitted in range from [rangeStart] to [rangeEnd].
   Future<EventsResponse> getEventsInRange(String eventName,
-      {Int64 rangeStart, Int64 rangeEnd, Int64 rangeSize}) {
+      {required Int64 rangeStart, required Int64 rangeEnd, Int64? rangeSize}) {
     // TODO: allow to skip some
 
     final request = GetEventsForHeightRangeRequest()

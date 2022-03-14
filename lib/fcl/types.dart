@@ -1,9 +1,11 @@
 import 'dart:convert';
+
 import 'package:flow_dart_sdk/fcl/utils.dart';
 
 // TODO: Reformat to CadenceValue similar to Go
 
 enum CadenceType {
+  Address,
   String,
   Int,
   Int8,
@@ -15,12 +17,12 @@ class CadenceValue {
   final CadenceType type;
   dynamic value;
 
-  CadenceValue({this.value, this.type});
+  CadenceValue({this.value, required this.type});
 
   /// TODO: ensure that value is properly reconstructed from JSON to specific
   /// format, because JSON-CDC encodes everything to strings - including numbers
   CadenceValue.fromJson(Map<String, dynamic> json)
-      : type = enumFromString(CadenceType.values, json['type']),
+      : type = enumFromString(CadenceType.values, json['type'])!,
         value = json['value'];
 
   Map<String, dynamic> toJson() =>
@@ -28,7 +30,7 @@ class CadenceValue {
 
   String toJsonString() {
     // TODO: Investigate if it will work without newline character
-    // Go version of this covnersion includes new line character at the end
+    // Go version of this conversion includes new line character at the end
     // which results in a string different from one in Go tests
     final newLine = "\n";
     return json.encode(this.toJson()) + newLine;

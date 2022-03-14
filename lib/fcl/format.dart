@@ -15,11 +15,10 @@ func FormatUFix64(flow uint64) string {
 }
 */
 
-import 'dart:ffi';
 import 'package:fixnum/fixnum.dart';
 import 'package:flow_dart_sdk/fcl/constants.dart';
 
-String _fixedPointToString(Int64 amount, num decimalPlaces) {
+String _fixedPointToString(Int64 amount, int decimalPlaces) {
   final amountString = amount.toRadixStringUnsigned(UFIX64_DECIMAL_PLACES);
   final length = amountString.length;
 

@@ -1,29 +1,18 @@
-import 'dart:typed_data';
-import 'dart:ffi';
 import 'dart:convert';
-import 'package:convert/convert.dart';
 
+import 'package:convert/convert.dart';
 import 'package:fixnum/fixnum.dart';
-import 'package:flow_dart_sdk/fcl/crypto.dart';
 import 'package:flow_dart_sdk/fcl/encode.dart';
 import 'package:flow_dart_sdk/fcl/types.dart';
 import 'package:flow_dart_sdk/src/cadenceUtils.dart';
 import 'package:flow_dart_sdk/src/generated/flow/entities/transaction.pb.dart';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pointycastle/ecc/curves/prime256v1.dart';
-import 'package:pointycastle/export.dart';
 import 'package:rlp/rlp.dart';
-import 'package:convert/convert.dart';
-import 'package:pointycastle/pointycastle.dart';
-import 'package:cryptography/cryptography.dart';
 
 Transaction baseTransaction() {
-  final script =
-      utf8.encode('''transaction { execute { log("Hello, World!") } }''');
+  final script = utf8.encode('''transaction { execute { log("Hello, World!") } }''');
   final payer = hex.decode("01".padLeft(16, "0"));
-  final refBlock = hex.decode(
-      "f0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b");
+  final refBlock = hex.decode("f0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b");
 
   final proposalKey = Transaction_ProposalKey()
     ..address = payer
@@ -40,8 +29,7 @@ Transaction baseTransaction() {
   transaction.authorizers.insertAll(0, [payer]);
 
   final signature = Transaction_Signature()
-    ..signature = hex.decode(
-        "f7225388c1d69d57e6251c9fda50cbbf9e05131e5adb81e5aa0422402f048162")
+    ..signature = hex.decode("f7225388c1d69d57e6251c9fda50cbbf9e05131e5adb81e5aa0422402f048162")
     ..address = payer
     ..keyId = 4;
 
@@ -62,7 +50,7 @@ void main() {
 
       final referenenceEnvelope =
           "f899f872b07472616e73616374696f6e207b2065786563757465207b206c6f67282248656c6c6f2c20576f726c64212229207d207dc0a0f0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b2a880000000000000001040a880000000000000001c9880000000000000001e4e38004a0f7225388c1d69d57e6251c9fda50cbbf9e05131e5adb81e5aa0422402f048162";
-      final actualEnvelope = hex.encode(foldEnvelope(tx));
+      final actualEnvelope = hex.encode(foldEnvelope([], tx));
       expect(actualEnvelope, referenenceEnvelope);
     });
 

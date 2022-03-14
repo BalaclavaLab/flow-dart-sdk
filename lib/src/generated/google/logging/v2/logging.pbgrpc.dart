@@ -1,12 +1,13 @@
 ///
 //  Generated code. Do not modify.
 //  source: google/logging/v2/logging.proto
-///
-// ignore_for_file: camel_case_types,non_constant_identifier_names,library_prefixes,unused_import,unused_shown_name
+//
+// @dart = 2.12
+// ignore_for_file: annotate_overrides,camel_case_types,unnecessary_const,non_constant_identifier_names,library_prefixes,unused_import,unused_shown_name,return_of_invalid_type,unnecessary_this,prefer_final_fields
 
 import 'dart:async' as $async;
 
-import 'dart:core' as $core show int, String, List;
+import 'dart:core' as $core;
 
 import 'package:grpc/service_api.dart' as $grpc;
 import 'logging.pb.dart' as $0;
@@ -44,51 +45,52 @@ class LoggingServiceV2Client extends $grpc.Client {
           ($0.ListLogsRequest value) => value.writeToBuffer(),
           ($core.List<$core.int> value) =>
               $0.ListLogsResponse.fromBuffer(value));
+  static final _$tailLogEntries =
+      $grpc.ClientMethod<$0.TailLogEntriesRequest, $0.TailLogEntriesResponse>(
+          '/google.logging.v2.LoggingServiceV2/TailLogEntries',
+          ($0.TailLogEntriesRequest value) => value.writeToBuffer(),
+          ($core.List<$core.int> value) =>
+              $0.TailLogEntriesResponse.fromBuffer(value));
 
   LoggingServiceV2Client($grpc.ClientChannel channel,
-      {$grpc.CallOptions options})
-      : super(channel, options: options);
+      {$grpc.CallOptions? options,
+      $core.Iterable<$grpc.ClientInterceptor>? interceptors})
+      : super(channel, options: options, interceptors: interceptors);
 
   $grpc.ResponseFuture<$1.Empty> deleteLog($0.DeleteLogRequest request,
-      {$grpc.CallOptions options}) {
-    final call = $createCall(_$deleteLog, $async.Stream.fromIterable([request]),
-        options: options);
-    return $grpc.ResponseFuture(call);
+      {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$deleteLog, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.WriteLogEntriesResponse> writeLogEntries(
       $0.WriteLogEntriesRequest request,
-      {$grpc.CallOptions options}) {
-    final call = $createCall(
-        _$writeLogEntries, $async.Stream.fromIterable([request]),
-        options: options);
-    return $grpc.ResponseFuture(call);
+      {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$writeLogEntries, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.ListLogEntriesResponse> listLogEntries(
       $0.ListLogEntriesRequest request,
-      {$grpc.CallOptions options}) {
-    final call = $createCall(
-        _$listLogEntries, $async.Stream.fromIterable([request]),
-        options: options);
-    return $grpc.ResponseFuture(call);
+      {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$listLogEntries, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.ListMonitoredResourceDescriptorsResponse>
       listMonitoredResourceDescriptors(
           $0.ListMonitoredResourceDescriptorsRequest request,
-          {$grpc.CallOptions options}) {
-    final call = $createCall(_$listMonitoredResourceDescriptors,
-        $async.Stream.fromIterable([request]),
+          {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$listMonitoredResourceDescriptors, request,
         options: options);
-    return $grpc.ResponseFuture(call);
   }
 
   $grpc.ResponseFuture<$0.ListLogsResponse> listLogs($0.ListLogsRequest request,
-      {$grpc.CallOptions options}) {
-    final call = $createCall(_$listLogs, $async.Stream.fromIterable([request]),
-        options: options);
-    return $grpc.ResponseFuture(call);
+      {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$listLogs, request, options: options);
+  }
+
+  $grpc.ResponseStream<$0.TailLogEntriesResponse> tailLogEntries(
+      $async.Stream<$0.TailLogEntriesRequest> request,
+      {$grpc.CallOptions? options}) {
+    return $createStreamingCall(_$tailLogEntries, request, options: options);
   }
 }
 
@@ -138,31 +140,44 @@ abstract class LoggingServiceV2ServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.ListLogsRequest.fromBuffer(value),
         ($0.ListLogsResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.TailLogEntriesRequest,
+            $0.TailLogEntriesResponse>(
+        'TailLogEntries',
+        tailLogEntries,
+        true,
+        true,
+        ($core.List<$core.int> value) =>
+            $0.TailLogEntriesRequest.fromBuffer(value),
+        ($0.TailLogEntriesResponse value) => value.writeToBuffer()));
   }
 
-  $async.Future<$1.Empty> deleteLog_Pre(
-      $grpc.ServiceCall call, $async.Future request) async {
+  $async.Future<$1.Empty> deleteLog_Pre($grpc.ServiceCall call,
+      $async.Future<$0.DeleteLogRequest> request) async {
     return deleteLog(call, await request);
   }
 
   $async.Future<$0.WriteLogEntriesResponse> writeLogEntries_Pre(
-      $grpc.ServiceCall call, $async.Future request) async {
+      $grpc.ServiceCall call,
+      $async.Future<$0.WriteLogEntriesRequest> request) async {
     return writeLogEntries(call, await request);
   }
 
   $async.Future<$0.ListLogEntriesResponse> listLogEntries_Pre(
-      $grpc.ServiceCall call, $async.Future request) async {
+      $grpc.ServiceCall call,
+      $async.Future<$0.ListLogEntriesRequest> request) async {
     return listLogEntries(call, await request);
   }
 
   $async.Future<$0.ListMonitoredResourceDescriptorsResponse>
       listMonitoredResourceDescriptors_Pre(
-          $grpc.ServiceCall call, $async.Future request) async {
+          $grpc.ServiceCall call,
+          $async.Future<$0.ListMonitoredResourceDescriptorsRequest>
+              request) async {
     return listMonitoredResourceDescriptors(call, await request);
   }
 
   $async.Future<$0.ListLogsResponse> listLogs_Pre(
-      $grpc.ServiceCall call, $async.Future request) async {
+      $grpc.ServiceCall call, $async.Future<$0.ListLogsRequest> request) async {
     return listLogs(call, await request);
   }
 
@@ -177,4 +192,6 @@ abstract class LoggingServiceV2ServiceBase extends $grpc.Service {
           $0.ListMonitoredResourceDescriptorsRequest request);
   $async.Future<$0.ListLogsResponse> listLogs(
       $grpc.ServiceCall call, $0.ListLogsRequest request);
+  $async.Stream<$0.TailLogEntriesResponse> tailLogEntries(
+      $grpc.ServiceCall call, $async.Stream<$0.TailLogEntriesRequest> request);
 }
