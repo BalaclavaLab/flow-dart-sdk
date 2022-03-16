@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:async/async.dart';
 import 'package:flow_dart_sdk/wallet/response.dart';
 import 'package:flutter_web_auth/flutter_web_auth.dart';
 import 'package:http/http.dart' as http;
@@ -50,13 +51,15 @@ class WalletUtils {
     return true;
   }
 
+  static CancelableOperation? _cancelable;
+
   static Future<void> openAuthorization(Service local) async {
     final uri = buildUrl(local.endpoint, 'https://canary.starly.io', params: local.params);
     print(uri.toString());
     print('Sleep');
     print('Wake');
-    final result = await FlutterWebAuth.authenticate(url: uri.toString(),callbackUrlScheme: 'starlydev');
-    await Future.delayed(Duration(seconds: 10));
+    final _cancelable = CancelableOperation.fromFuture( FlutterWebAuth.authenticate(url: uri.toString(),callbackUrlScheme: 'starlydev'));
+    await Future.delayed(Duration(seconds: 5));
   }
 
   /*
@@ -102,6 +105,7 @@ class WalletUtils {
     final result = Response.fromJson(jsonDecode((await http.post(fullUrl)).body));
     switch (result.status) {
       case ResponseStatus.approved:
+        _cancelable?.cancel();
         print('APPROVED');
         return;
       case ResponseStatus.declined:
