@@ -29,12 +29,10 @@ class WalletUtils {
 
   static Future<bool> fetchService(String url, {Map<String, String>? params}) async {
     final fullUrl = buildUrl(url, 'https://canary.starly.io', params: params);
-
-    print(fullUrl);
-
     final result = Response.fromJson(jsonDecode((await http.post(fullUrl)).body));
     switch (result.status) {
       case ResponseStatus.approved:
+        _cancelable?.cancel();
         return true;
       case ResponseStatus.declined:
         return false;
@@ -58,7 +56,8 @@ class WalletUtils {
     print(uri.toString());
     print('Sleep');
     print('Wake');
-    final _cancelable = CancelableOperation.fromFuture( FlutterWebAuth.authenticate(url: uri.toString(),callbackUrlScheme: 'starlydev'));
+    _cancelable = CancelableOperation.fromFuture(
+        FlutterWebAuth.authenticate(url: uri.toString(), callbackUrlScheme: 'starlydev'));
     await Future.delayed(Duration(seconds: 5));
   }
 
@@ -102,7 +101,7 @@ class WalletUtils {
 
     print(fullUrl);
 
-    final result = Response.fromJson(jsonDecode((await http.post(fullUrl)).body));
+    final result = Response.fromJson(jsonDecode((await http.get(fullUrl)).body));
     switch (result.status) {
       case ResponseStatus.approved:
         _cancelable?.cancel();
