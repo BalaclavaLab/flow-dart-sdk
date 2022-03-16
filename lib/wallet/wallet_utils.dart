@@ -52,12 +52,11 @@ class WalletUtils {
 
   static Future<void> openAuthorization(Service local) async {
     final uri = buildUrl(local.endpoint, 'https://canary.starly.io', params: local.params);
-    print(local.method);
     print(uri.toString());
     print('Sleep');
     print('Wake');
-    final result = await FlutterWebAuth.authenticate(url: uri.toString(), callbackUrlScheme: 'starly');
-    await Future.delayed(Duration(seconds: 20));
+    final result = await FlutterWebAuth.authenticate(url: uri.toString(),callbackUrlScheme: 'starlydev');
+    await Future.delayed(Duration(seconds: 10));
   }
 
   /*
