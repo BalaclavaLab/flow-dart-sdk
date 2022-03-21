@@ -14,6 +14,7 @@ import 'package:flow_dart_sdk/src/cadenceUtils.dart';
 // Flow protobuf
 import 'package:flow_dart_sdk/src/generated/flow/access/access.pbgrpc.dart';
 import 'package:flow_dart_sdk/src/generated/flow/entities/transaction.pb.dart';
+import 'package:flow_dart_sdk/wallet/app_info.dart';
 import 'package:flow_dart_sdk/wallet/wallet_provider.dart';
 import 'package:flow_dart_sdk/wallet/wallet_utils.dart';
 import 'package:grpc/grpc.dart';
@@ -21,12 +22,13 @@ import 'package:grpc/grpc_connection_interface.dart';
 import 'package:rlp/rlp.dart';
 
 class FlowClient {
-  String _appTitle;
-  String _appUrl;
-  WalletProvider _walletProvider;
+  final WalletProvider _walletProvider;
+  final WalletHelper _walletHelper;
+  final WalletListener _walletListener;
 
-  String _accessNode;
-  int _port;
+  final AppInfo _appInfo;
+  final String _accessNode;
+  final int _port;
   ClientChannelBase _channel;
 
   AccessAPIClient? accessClient;
@@ -34,15 +36,17 @@ class FlowClient {
   static const String MOBILE_EMULATOR_ENDPOINT = '10.0.2.2';
   static const int FLOW_EMULATOR_PORT = 3569;
 
-  FlowClient(this._accessNode, this._port, this._appTitle, this._appUrl, this._walletProvider)
-      : this._channel = ClientChannel(
+  FlowClient(
+      this._accessNode, this._port, this._appInfo, this._walletProvider, this._walletListener)
+      : _walletHelper = WalletHelper(_appInfo, _walletProvider, _walletListener),
+        this._channel = ClientChannel(
           _accessNode,
           port: _port,
           options: const ChannelOptions(credentials: ChannelCredentials.insecure()),
         );
 
   Future<void> authenticate() async {
-    await WalletUtils.performHttpRequest(_walletProvider.endpoint);
+    await _walletHelper.performHttpRequest();
   }
 
   AccessAPIClient getAccessClient() {

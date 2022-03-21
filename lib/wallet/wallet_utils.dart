@@ -1,16 +1,24 @@
 import 'dart:convert';
 
-import 'package:async/async.dart';
+import 'package:flow_dart_sdk/wallet/app_info.dart';
 import 'package:flow_dart_sdk/wallet/response.dart';
-import 'package:flutter_web_auth/flutter_web_auth.dart';
+import 'package:flow_dart_sdk/wallet/wallet_provider.dart';
 import 'package:http/http.dart' as http;
 
-class WalletUtils {
-  static Uri buildUrl(String baseUrl, String location, {Map<String, dynamic>? params}) {
+class WalletHelper {
+  static const locationParam = 'l6n';
+
+  final AppInfo _appInfo;
+  final WalletListener _listener;
+  final WalletProvider _walletProvider;
+
+  WalletHelper(this._appInfo, this._walletProvider, this._listener);
+
+  Uri buildUrl(String baseUrl, String location, {Map<String, dynamic>? params}) {
     final baseUri = Uri.parse(baseUrl);
     final queryParams = {...baseUri.queryParameters, if (params != null) ...params};
-    if (!queryParams.containsKey('l6n')) {
-      queryParams['l6n'] = location;
+    if (!queryParams.containsKey(locationParam)) {
+      queryParams[locationParam] = location;
     }
 
     final finalParams = <String, String>{};
@@ -22,17 +30,16 @@ class WalletUtils {
     return Uri.https(baseUri.authority, baseUri.path, finalParams);
   }
 
-  static Future<void> performHttpRequest(String url) async {
-    final result = await fetchService(url);
+  Future<void> performHttpRequest() async {
+    final result = await fetchService(_walletProvider.endpoint);
     print(result);
   }
 
-  static Future<bool> fetchService(String url, {Map<String, String>? params}) async {
-    final fullUrl = buildUrl(url, 'https://canary.starly.io', params: params);
+  Future<bool> fetchService(String url, {Map<String, String>? params}) async {
+    final fullUrl = buildUrl(url, _appInfo.url, params: params);
     final result = Response.fromJson(jsonDecode((await http.post(fullUrl)).body));
     switch (result.status) {
       case ResponseStatus.approved:
-        _cancelable?.cancel();
         return true;
       case ResponseStatus.declined:
         return false;
@@ -49,66 +56,23 @@ class WalletUtils {
     return true;
   }
 
-  static CancelableOperation? _cancelable;
-
-  static Future<void> openAuthorization(Service local) async {
-    final uri = buildUrl(local.endpoint, 'https://canary.starly.io', params: local.params);
-    print(uri.toString());
-    print('Sleep');
-    print('Wake');
-    _cancelable = CancelableOperation.fromFuture(
-        FlutterWebAuth.authenticate(url: uri.toString(), callbackUrlScheme: 'starlydev'));
-    await Future.delayed(Duration(seconds: 5));
+  Future<void> openAuthorization(Service local) async {
+    final uri = buildUrl(local.endpoint, _appInfo.url, params: local.params);
+    _listener.openWebView(uri);
+    await Future.delayed(Duration(seconds: 10));
   }
 
-  /*
-  *         if !canContinue {
-            completion(Result.failure(FCLError.declined))
-            return
-        }
-
-        guard let url = service.endpoint else {
-            completion(Result.failure(FCLError.invaildURL))
-            return
-        }
-
-        fetchService(url: url, method: "GET", params: service.params) { response in
-            if case let .success(result) = response {
-                switch result.status {
-                case .approved:
-                    self.closeSession()
-                    completion(response)
-                case .declined:
-                    completion(Result.failure(FCLError.declined))
-                case .pending:
-                    // TODO: Improve this
-                    DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500)) {
-                        self.poll(service: service) { response in
-                            completion(response)
-                        }
-                    }
-                }
-            }
-
-            if case let .failure(error) = response {
-                completion(Result.failure(error))
-            }
-        }*/
-
-  static Future<void> poll(Service updated) async {
-    print('POLL');
-    final fullUrl = buildUrl(updated.endpoint, 'https://canary.starly.io', params: updated.params);
+  Future<void> poll(Service updated) async {
+    final fullUrl = buildUrl(updated.endpoint, _appInfo.url, params: updated.params);
 
     print(fullUrl);
 
     final result = Response.fromJson(jsonDecode((await http.get(fullUrl)).body));
     switch (result.status) {
       case ResponseStatus.approved:
-        _cancelable?.cancel();
-        print('APPROVED');
+        _listener.closeWebView.call();
         return;
       case ResponseStatus.declined:
-        print('DECLINED');
         return;
       case ResponseStatus.pending:
         {
@@ -120,38 +84,11 @@ class WalletUtils {
 
     return;
   }
+}
 
-/*
-  *         fetchService(url: url, method: "POST") { response in
+class WalletListener {
+  final Function(Uri uri) openWebView;
+  final Function closeWebView;
 
-            DispatchQueue.main.async {
-                self.delegate?.hideLoading()
-            }
-
-            switch response {
-            case let .success(result):
-                switch result.status {
-                case .approved:
-                    completion(response)
-                case .declined:
-                    completion(Result.failure(FCLError.declined))
-                case .pending:
-                    self.canContinue = true
-                    guard let local = result.local, let updates = result.updates else {
-                        completion(Result.failure(FCLError.generic))
-                        return
-                    }
-                    do {
-                        try self.openAuthenticationSession(service: local)
-                    } catch {
-                        completion(Result.failure(error))
-                    }
-                    self.poll(service: updates) { response in
-                        completion(response)
-                    }
-                }
-            case let .failure(error):
-                completion(Result.failure(error))
-            }
-        } */
+  WalletListener(this.openWebView, this.closeWebView);
 }

@@ -79,6 +79,7 @@ class Response {
   Response(this.responseBody, this.status, this.fType, this.fVsn);
 
   factory Response.fromJson(Map<String, dynamic> json) {
+    print(json);
     return Response(
         json, ResponseStatusExtension.fromString(json['status']), json['f_type'], json['f_vsn']);
   }
